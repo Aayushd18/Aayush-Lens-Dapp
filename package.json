@@ -9,8 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@apollo/client": "^3.7.1",
+    "@rainbow-me/rainbowkit": "^0.7.4",
+    "ethers": "^5.7.2",
+    "graphql": "^16.6.0",
     "next": "13.0.2",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "react-modal": "^3.16.1",
+    "uuid": "^9.0.0",
+    "wagmi": "^0.7.12",
+    "web3.storage": "^4.4.0"
   }
 }
