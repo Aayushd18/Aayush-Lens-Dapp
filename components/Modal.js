@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Modal from 'react-modal';
-import { apolloClient, sendToIpfs } from '../utils/utils'
+import { apolloClient, sendImageToIpfs, sendToIpfs } from '../utils/utils'
 import { v4 as uuid } from 'uuid';
 import { baseMetadata, LENS_HUB_CONTRACT_ADDRESS } from '../utils/utils';
 import lens from '../utils/abi/lens.json'
@@ -12,10 +12,19 @@ import { createPostTypedData } from '../utils/queries';
 
 
 const ModalComponent = ({ userProfile }) => {
+
+  const POSTTYPE = {
+    "text": "TEXT_ONLY",
+    "image": "IMAGE",
+    "video": "VIDEO"
+  }
+
   const [modalIsOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const { address } = useAccount();
   const [ postData, setPostData ] = useState();
+  const [files, setFiles] = useState()
+  const [fileType, setFileType] = useState(POSTTYPE["text"]);
 
 
   const { config } = usePrepareContractWrite({
@@ -35,6 +44,16 @@ const ModalComponent = ({ userProfile }) => {
     },
   };
 
+  const handleChange = async (e) => {
+    setFiles(e.target.files[0])
+    console.log(e.target.files[0])
+
+    const type = e.target.files[0].type.split("/")[0]
+    setFileType(POSTTYPE[type])
+    console.log(POSTTYPE[type])
+    
+  }
+
 
   function openModal() {
     setIsOpen(true);
@@ -53,13 +72,31 @@ const ModalComponent = ({ userProfile }) => {
   }
 
   const uploadToIpfs = async () => {
+    let mediaCid
+    if (files) {
+
+      mediaCid = await sendImageToIpfs(files)
+      console.log(mediaCid)
+    }
+
     const postData = {
+      mainContentFocus: fileType,
       content: input,
       description: input,
       name: `Post by ${userProfile.id}`,
       external_url: `https://lenster.xyz/u/${userProfile.handle}`,
       metadata_id: uuid(),
       createdOn: new Date().toISOString(),
+      image: mediaCid ? `https://ipfs.io/ipfs/${mediaCid}` : null,
+      imageMimeType: files ? files.type : null,
+      media: files ? [
+        {
+          item: `https://ipfs.io/ipfs/${mediaCid}`,
+          type: files.type,
+          altTag: "Test Image",
+        }
+      ] : [],
+      attributes: [],
       ...baseMetadata
     }
 
@@ -96,7 +133,7 @@ const ModalComponent = ({ userProfile }) => {
     e.preventDefault()
     const cid = await uploadToIpfs();
 
-    const contentURI = `https://ipfs.io/ipfs/${cid}/[object Object]`
+    const contentURI = `https://ipfs.io/ipfs/${cid}/`
     const dispatcherResult = await createPost(contentURI)
     console.log('create post via dispatcher: createPostViaDispatcherRequest', dispatcherResult);
 
@@ -129,6 +166,10 @@ const ModalComponent = ({ userProfile }) => {
             onChange={handleInput}
             value={input}
            />
+           <label htmlFor="postMedia" style={{fontSize: "20px", marginBottom: "10px", marginTop: "20px"}}>Image or Video</label>
+           <input 
+            style={{ padding: "20px" }}
+            type="file" id='postMedia' onChange={handleChange} />
            <button style={{ alignSelf: "center", margin: "20px", padding: "15px", backgroundColor: "lightgreen", color: "black", borderRadius: "15px", border: "none" }} onClick={sendPost}>Post On Lens</button>
         </form>
         <button onClick={closeModal}>close</button>

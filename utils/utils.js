@@ -39,17 +39,25 @@ const MakeStorageClient = () => {
 export const sendToIpfs = async (files) => {
   const client = MakeStorageClient()
   const file =[new File([files], {type: 'application/json'})]
-  const cid = await client.put(file)
+  const cid = await client.put(file, {
+    wrapWithDirectory: false,
+  })
+  console.log(`File stored with CID: ${cid}`)
+  return cid
+}
+
+export const sendImageToIpfs = async (files) => {
+  const client = MakeStorageClient()
+  const cid = await client.put([files], {
+    wrapWithDirectory: false,
+  })
   console.log(`File stored with CID: ${cid}`)
   return cid
 }
 
 export const baseMetadata = {
   version: '2.0.0',
-  mainContentFocus: 'TEXT_ONLY',
-  locale: 'en-US',
-  attributes: [],
-  tags: ['using_api_examples'],
+  locale: "en-US",
+  tags: ["using_api_examples"],
   appId: "AayushLensDapp",
-  hidden:	false
 }
